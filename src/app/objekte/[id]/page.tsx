@@ -10,6 +10,7 @@ import {
   performanceLevel,
 } from "@/lib/calc";
 import { StatCard } from "@/components/ui/stat-card";
+import { EuroIcon, TrendUpIcon, HomeIcon, RulerIcon } from "@/components/ui/icons";
 import { PerformanceBadge } from "@/components/ui/badge";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { RentComparisonChart } from "@/components/charts/rent-comparison-chart";
@@ -74,6 +75,7 @@ export default async function ObjektDetailPage({
         <StatCard
           label="Nettokaltmiete gesamt"
           value={formatEuro(objekt.kennzahlen.gesamtKaltmiete)}
+          icon={<EuroIcon />}
         />
         <StatCard
           label="Ø Miete / m²"
@@ -82,12 +84,14 @@ export default async function ObjektDetailPage({
             objekt.kennzahlen.abweichungProzent
           )})`}
           tone={gesamtLevel === "kritisch" ? "bad" : gesamtLevel === "beobachten" ? "warn" : "good"}
+          icon={<RulerIcon />}
         />
         <StatCard
           label="Cashflow / Monat"
           value={formatEuro(objekt.kennzahlen.cashflowMonatlich)}
           hint={`Bankrate: ${formatEuro(objekt.bankrateMonatlich)}`}
           tone={objekt.kennzahlen.cashflowMonatlich >= 0 ? "good" : "bad"}
+          icon={<TrendUpIcon />}
         />
         <StatCard
           label="Vermietungsquote"
@@ -99,6 +103,7 @@ export default async function ObjektDetailPage({
               : 0
           } %`}
           hint={`${objekt.kennzahlen.anzahlVermietet}/${objekt.kennzahlen.anzahlWohnungen} Wohnungen`}
+          icon={<HomeIcon />}
         />
       </div>
 

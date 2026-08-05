@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getPortfolioKennzahlen } from "@/lib/queries";
 import { formatEuro } from "@/lib/calc";
 import { StatCard } from "@/components/ui/stat-card";
+import { EuroIcon, TrendUpIcon, HomeIcon } from "@/components/ui/icons";
 import { ObjektCard } from "@/components/objekt-card";
 import { RentBrowserChart } from "@/components/charts/rent-browser-chart";
 import { CashflowBrowserChart } from "@/components/charts/cashflow-browser-chart";
@@ -24,7 +25,7 @@ export default async function DashboardPage() {
         </div>
         <Link
           href="/objekte"
-          className="text-sm font-medium px-4 py-2 rounded-lg bg-[var(--brand)] text-white hover:bg-[var(--brand-strong)] w-fit"
+          className="text-sm font-medium px-4 py-2 rounded-lg btn-primary w-fit"
         >
           + Neues Objekt
         </Link>
@@ -35,17 +36,20 @@ export default async function DashboardPage() {
           label="Nettokaltmiete gesamt / Monat"
           value={formatEuro(kpi.gesamtKaltmiete)}
           hint={`${kpi.anzahlVermietet}/${kpi.anzahlWohnungen} Einheiten vermietet`}
+          icon={<EuroIcon />}
         />
         <StatCard
           label="Cashflow / Monat"
           value={formatEuro(kpi.cashflowMonatlich)}
           hint={`Bankrate gesamt: ${formatEuro(kpi.gesamtBankrate)}`}
           tone={kpi.cashflowMonatlich >= 0 ? "good" : "bad"}
+          icon={<TrendUpIcon />}
         />
         <StatCard
           label="Vermietungsquote"
           value={`${vermietungsquote} %`}
           hint={`${kpi.anzahlVermietet} von ${kpi.anzahlWohnungen} Wohnungen`}
+          icon={<HomeIcon />}
         />
       </div>
 

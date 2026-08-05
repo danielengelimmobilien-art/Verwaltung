@@ -56,7 +56,7 @@ export function NewWohnungButton({ objektId }: { objektId: string }) {
   return (
     <Modal
       trigger={
-        <button className="text-sm font-medium px-3.5 py-2 rounded-lg bg-[var(--brand)] text-white hover:bg-[var(--brand-strong)]">
+        <button className="text-sm font-medium px-3.5 py-2 rounded-lg btn-primary">
           + Wohnung hinzufügen
         </button>
       }

@@ -3,8 +3,10 @@
 Portfolio-Dashboard für Wohnungen und Mehrfamilienhäuser: Nettokaltmiete im
 Überblick (gesamt und je Objekt), Miete/m² im Vergleich zur Zielmiete,
 Cashflow vs. Bankrate, eine Mieterübersicht mit Kaution/Kalt-/Warmmiete und
-letzter Mieterhöhung, sowie eine Sanierungs-/Modernisierungsübersicht je
-Objekt. Alle Daten sind direkt in der Oberfläche editierbar.
+letzter Mieterhöhung, eine Sanierungs-/Modernisierungsübersicht je Objekt,
+Kontakte für Gewerke/Dienstleister, eine Bankanbindung zur automatischen
+Prüfung von Mietzahlungen sowie eine Bibliothek für Textvorlagen. Alle Daten
+sind direkt in der Oberfläche editierbar.
 
 ## Tech-Stack
 
@@ -43,10 +45,48 @@ Deployment unbedingt ändern** (siehe unten).
 - **Mieterhöhung**: Historie der Mieterhöhungen zu einem Mietverhältnis
 - **Sanierung**: Modernisierungs-/Sanierungsmaßnahme je Objekt (Kategorie,
   Kosten, Status, optionaler Ablage-Hinweis)
+- **Kontakt**: Gewerke/Dienstleister (Elektrik, Hausverwaltung, ...),
+  portfolioweit oder einem Objekt zugeordnet
+- **Bankkonto / Kontobewegung**: verbundenes Bankkonto samt importierter
+  Buchungen zur Mietzahlungsprüfung (siehe unten)
+- **Textvorlage**: wiederverwendbare Textbausteine (Mahnung, Mieterhöhung, ...)
 
 Alles wird über die Formulare in der Oberfläche gepflegt (Buttons "Bearbeiten",
 "+ Neues Objekt", "Mieterhöhung erfassen" usw.) – kein direkter
 Datenbankzugriff nötig.
+
+## Mietzahlungen prüfen (Bankanbindung)
+
+Auf der Seite **Zahlungen** lässt sich ein echtes Bankkonto verbinden, um
+eingehende Mietzahlungen automatisch mit den erwarteten Beträgen
+abzugleichen. Das läuft über [GoCardless Bank Account Data](https://bankaccountdata.gocardless.com)
+(PSD2-Kontoinformationsdienst, ehem. Nordigen) – einen Drittanbieter, bei dem
+du selbst einen (kostenlosen) Account brauchst:
+
+1. Auf [bankaccountdata.gocardless.com](https://bankaccountdata.gocardless.com)
+   registrieren
+2. Unter "Developers" ein `secret_id`/`secret_key`-Paar erzeugen
+3. In `.env` bzw. den Vercel-Umgebungsvariablen setzen:
+   - `GOCARDLESS_SECRET_ID`
+   - `GOCARDLESS_SECRET_KEY`
+4. In der App auf **Zahlungen → + Bankkonto verbinden** klicken, Bank
+   auswählen, danach bei der Bank autorisieren (typische PSD2-Anmeldung) –
+   du landest automatisch wieder in der App
+
+Nach der Verbindung gleicht "Jetzt synchronisieren" die letzten 180 Tage an
+Kontobewegungen ab und ordnet sie – wo eindeutig anhand von Betrag und
+Namen im Verwendungszweck möglich – automatisch dem passenden
+Mietverhältnis zu. Uneindeutige Zahlungen tauchen unter "Nicht zugeordnete
+Zahlungseingänge" auf und lassen sich manuell zuordnen. Die
+Bank-Autorisierung ist bei den meisten Banken nur ca. 90 Tage gültig und
+muss danach erneuert werden (einfach das Konto neu verbinden).
+
+Ohne gesetzte `GOCARDLESS_SECRET_ID`/`GOCARDLESS_SECRET_KEY` funktioniert die
+übrige App normal weiter – die Zahlungsseite zeigt dann nur einen Hinweis
+und blendet "Bankkonto verbinden" aus.
+
+**Kosten:** GoCardless Bank Account Data hat für kleines Volumen (wenige
+End-Nutzer/Konten wie hier) einen kostenlosen Tarif.
 
 ## Sanierungs-/Modernisierungsunterlagen aus lokalen Ordnern
 
@@ -82,6 +122,8 @@ DATABASE_URL="libsql://<deine-db>.turso.io" TURSO_AUTH_TOKEN="<dein-token>" npx 
    - `TURSO_AUTH_TOKEN` = `<dein-token>`
    - `APP_BASIC_AUTH_USER` = eigener Benutzername
    - `APP_BASIC_AUTH_PASSWORD` = eigenes, sicheres Passwort
+   - `GOCARDLESS_SECRET_ID` / `GOCARDLESS_SECRET_KEY` = optional, für die
+     Bankanbindung (siehe unten)
 4. Deploy klicken
 
 Die App ist danach unter der von Vercel vergebenen URL erreichbar (auf

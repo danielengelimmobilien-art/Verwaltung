@@ -83,7 +83,7 @@ export function Modal({
             <button
               type="submit"
               disabled={pending}
-              className="px-3.5 py-2 rounded-lg text-sm font-medium bg-[var(--brand)] text-white hover:bg-[var(--brand-strong)] disabled:opacity-60"
+              className="px-3.5 py-2 rounded-lg text-sm font-medium btn-primary disabled:opacity-60"
             >
               {pending ? "Speichert…" : submitLabel}
             </button>

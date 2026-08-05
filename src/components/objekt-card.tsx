@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatEuro } from "@/lib/calc";
 import { performanceLevel } from "@/lib/calc";
 import { PerformanceBadge } from "@/components/ui/badge";
+import { BuildingIcon } from "@/components/ui/icons";
 import type { ObjektMitKennzahlen } from "@/lib/queries";
 
 const levelLabels = {
@@ -25,11 +26,16 @@ export function ObjektCard({ objekt }: { objekt: ObjektMitKennzahlen }) {
       className="card p-5 flex flex-col gap-3 hover:shadow-lg transition-shadow hover:border-[var(--brand)]"
     >
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="font-semibold leading-tight">{objekt.name}</h3>
-          <p className="text-xs text-[var(--muted)] mt-0.5">
-            {objekt.strasse}, {objekt.plz} {objekt.ort}
-          </p>
+        <div className="flex items-start gap-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-soft)] text-[var(--brand-strong)]">
+            <BuildingIcon className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="font-semibold leading-tight">{objekt.name}</h3>
+            <p className="text-xs text-[var(--muted)] mt-0.5">
+              {objekt.strasse}, {objekt.plz} {objekt.ort}
+            </p>
+          </div>
         </div>
         <PerformanceBadge level={level} label={levelLabels[level]} />
       </div>

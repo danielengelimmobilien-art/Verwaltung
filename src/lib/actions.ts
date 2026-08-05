@@ -316,3 +316,35 @@ export async function deleteKontakt(id: string) {
   await prisma.kontakt.delete({ where: { id } });
   revalidatePath("/kontakte");
 }
+
+// ---------- Textvorlage ----------
+
+export async function createTextvorlage(formData: FormData) {
+  await prisma.textvorlage.create({
+    data: {
+      titel: str(formData, "titel") ?? "Neue Vorlage",
+      kategorie: str(formData, "kategorie") ?? "Sonstiges",
+      inhalt: str(formData, "inhalt") ?? "",
+      notizen: str(formData, "notizen"),
+    },
+  });
+  revalidatePath("/textvorlagen");
+}
+
+export async function updateTextvorlage(id: string, formData: FormData) {
+  await prisma.textvorlage.update({
+    where: { id },
+    data: {
+      titel: str(formData, "titel") ?? undefined,
+      kategorie: str(formData, "kategorie") ?? undefined,
+      inhalt: str(formData, "inhalt") ?? undefined,
+      notizen: str(formData, "notizen"),
+    },
+  });
+  revalidatePath("/textvorlagen");
+}
+
+export async function deleteTextvorlage(id: string) {
+  await prisma.textvorlage.delete({ where: { id } });
+  revalidatePath("/textvorlagen");
+}

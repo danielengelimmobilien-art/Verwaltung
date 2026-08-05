@@ -46,6 +46,17 @@ export function formatProzent(value: number | null | undefined): string {
   return `${sign}${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 }).format(value)} %`;
 }
 
+export function formatMonat(jahr: number, monatNullbasiert: number): string {
+  const d = new Date(jahr, monatNullbasiert, 1);
+  return new Intl.DateTimeFormat("de-DE", { month: "short", year: "numeric" }).format(d);
+}
+
+export function maskeIban(iban: string | null | undefined): string {
+  if (!iban) return "–";
+  const bereinigt = iban.replace(/\s/g, "");
+  return `•••• ${bereinigt.slice(-4)}`;
+}
+
 /** Performance-Ampel je nach Abweichung von der Zielmiete */
 export function performanceLevel(
   abweichungProzent: number | null

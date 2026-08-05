@@ -39,6 +39,7 @@ model Objekt {
   wohnungen   Wohnung[]
   sanierungen Sanierung[]
   kontakte    Kontakt[]
+  bankkonten  Bankkonto[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,7 +101,8 @@ model Mietverhaeltnis {
 
   notizen String?
 
-  mieterhoehungen Mieterhoehung[]
+  mieterhoehungen  Mieterhoehung[]
+  kontobewegungen  Kontobewegung[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -170,5 +172,84 @@ model Kontakt {
   updatedAt DateTime @updatedAt
 
   @@index([objektId])
+  @@index([kategorie])
+}
+
+/// Verbundenes Bankkonto (über GoCardless Bank Account Data / PSD2) zur
+/// automatischen Prüfung eingehender Mietzahlungen.
+/// Ohne objektId = portfolioweit (Konto sammelt Mieten mehrerer Objekte),
+/// mit objektId = nur für dieses eine Objekt relevant.
+model Bankkonto {
+  id String @id @default(cuid())
+
+  bezeichnung     String // Anzeigename, z.B. "Sparkasse Girokonto"
+  institutionId   String? // GoCardless institution id
+  institutionName String?
+  iban            String?
+  kontoinhaber    String?
+
+  /// GoCardless requisition id (Verbindungsvorgang)
+  requisitionId String?
+  /// GoCardless account id (nach erfolgreicher Verbindung)
+  gocardlessAccountId String?
+
+  /// ausstehend | verbunden | fehler | getrennt
+  status String @default("ausstehend")
+  fehler String?
+
+  letzterSync DateTime?
+
+  objektId String?
+  objekt   Objekt? @relation(fields: [objektId], references: [id], onDelete: SetNull)
+
+  kontobewegungen Kontobewegung[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([objektId])
+}
+
+/// Einzelne Buchung eines verbundenen Bankkontos, ggf. einem Mietverhältnis
+/// zur Zahlungsprüfung zugeordnet (automatisch per Betrag/Name oder manuell).
+model Kontobewegung {
+  id          String    @id @default(cuid())
+  bankkontoId String
+  bankkonto   Bankkonto @relation(fields: [bankkontoId], references: [id], onDelete: Cascade)
+
+  /// GoCardless transactionId (Deduplizierung beim Sync)
+  externeId String
+
+  datum            DateTime
+  betrag           Float
+  waehrung         String  @default("EUR")
+  verwendungszweck String?
+  absender         String? // debtorName bei Zahlungseingängen
+
+  mietverhaeltnisId String?
+  mietverhaeltnis   Mietverhaeltnis? @relation(fields: [mietverhaeltnisId], references: [id], onDelete: SetNull)
+
+  automatischZugeordnet Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([bankkontoId, externeId])
+  @@index([bankkontoId])
+  @@index([mietverhaeltnisId])
+}
+
+/// Textvorlage für wiederkehrende Schreiben (z.B. Mahnung, Mieterhöhung).
+/// Inhalte werden vom Nutzer selbst gepflegt.
+model Textvorlage {
+  id String @id @default(cuid())
+
+  titel     String
+  kategorie String // Mahnung, Mieterhöhung, Kündigungsbestätigung, Nebenkostenabrechnung, Wohnungsübergabe, Willkommen/Einzug, Sonstiges
+  inhalt    String
+  notizen   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([kategorie])
 }

@@ -52,6 +52,58 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const zahlungsStyles: Record<string, string> = {
+  bezahlt: "bg-[var(--good-soft)] text-[var(--good)]",
+  teilweise: "bg-[var(--warn-soft)] text-[var(--warn)]",
+  fehlt: "bg-[var(--bad-soft)] text-[var(--bad)]",
+  nicht_ueberwacht: "bg-[var(--surface-muted)] text-[var(--muted)]",
+};
+
+const zahlungsLabels: Record<string, string> = {
+  bezahlt: "Bezahlt",
+  teilweise: "Teilweise",
+  fehlt: "Fehlt",
+  nicht_ueberwacht: "Nicht überwacht",
+};
+
+export function ZahlungsBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={clsx(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
+        zahlungsStyles[status] ?? zahlungsStyles.nicht_ueberwacht
+      )}
+    >
+      {zahlungsLabels[status] ?? status}
+    </span>
+  );
+}
+
+const kontoStatusStyles: Record<string, string> = {
+  ausstehend: "bg-[var(--warn-soft)] text-[var(--warn)]",
+  verbunden: "bg-[var(--good-soft)] text-[var(--good)]",
+  fehler: "bg-[var(--bad-soft)] text-[var(--bad)]",
+};
+
+const kontoStatusLabels: Record<string, string> = {
+  ausstehend: "Ausstehend",
+  verbunden: "Verbunden",
+  fehler: "Fehler",
+};
+
+export function KontoStatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={clsx(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
+        kontoStatusStyles[status] ?? kontoStatusStyles.ausstehend
+      )}
+    >
+      {kontoStatusLabels[status] ?? status}
+    </span>
+  );
+}
+
 export function Badge({
   children,
   tone = "neutral",
