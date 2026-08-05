@@ -1,0 +1,147 @@
+// Prisma Schema für die Immobilien-Verwaltung
+// Provider "sqlite" wird sowohl lokal (Datei) als auch produktiv über
+// Turso/libSQL genutzt (gleicher Adapter, siehe src/lib/prisma.ts) -
+// dadurch entfällt ein Wechsel des Providers beim Deployment.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Ein Objekt = eine Immobilie (einzelne Eigentumswohnung oder ganzes Mehrfamilienhaus)
+model Objekt {
+  id       String @id @default(cuid())
+  name     String
+  strasse  String
+  plz      String
+  ort      String
+
+  /// Lagebeschreibung / Mikrolage des Objekts (z.B. "ruhige Seitenstraße, gute Anbindung")
+  lage String?
+
+  baujahr   Int?
+  kaufpreis Float?
+  kaufdatum DateTime?
+
+  /// Finanzierung / Bankdarlehen
+  darlehenssumme    Float?
+  zinssatzProzent   Float?
+  tilgungProzent    Float?
+  bankrateMonatlich Float?
+  bankName          String?
+
+  notizen String?
+
+  wohnungen   Wohnung[]
+  sanierungen Sanierung[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+/// Eine Wohnung innerhalb eines Objekts (bei Einzel-ETW: das einzige Wohnung-Objekt-Paar)
+model Wohnung {
+  id       String @id @default(cuid())
+  objektId String
+  objekt   Objekt @relation(fields: [objektId], references: [id], onDelete: Cascade)
+
+  bezeichnung String // z.B. "Whg 3" oder "Whg links"
+
+  /// Lage im Objekt, z.B. "2. OG rechts", "EG", "Dachgeschoss"
+  lageImObjekt String
+
+  groesseQm Float
+  zimmer    Float?
+
+  /// Ziel-Nettokaltmiete pro qm, zum Abgleich mit der aktuellen Miete
+  zielmieteProQm Float?
+
+  notizen String?
+
+  mietverhaeltnisse Mietverhaeltnis[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([objektId])
+}
+
+/// Ein Mietverhältnis (aktuell oder historisch) für eine Wohnung
+model Mietverhaeltnis {
+  id        String  @id @default(cuid())
+  wohnungId String
+  wohnung   Wohnung @relation(fields: [wohnungId], references: [id], onDelete: Cascade)
+
+  mieterName   String
+  einzugsdatum DateTime
+  auszugsdatum DateTime?
+
+  kaution Float?
+
+  /// aktuelle Nettokaltmiete
+  kaltmiete Float
+
+  /// Betriebskosten-Vorauszahlung (ohne Heizung)
+  betriebskostenVorauszahlung Float?
+
+  /// Heizkosten-Vorauszahlung
+  heizkostenVorauszahlung Float?
+
+  aktiv Boolean @default(true)
+
+  notizen String?
+
+  mieterhoehungen Mieterhoehung[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([wohnungId])
+}
+
+/// Historie der Mieterhöhungen zu einem Mietverhältnis
+model Mieterhoehung {
+  id                String          @id @default(cuid())
+  mietverhaeltnisId String
+  mietverhaeltnis   Mietverhaeltnis @relation(fields: [mietverhaeltnisId], references: [id], onDelete: Cascade)
+
+  datum         DateTime
+  alteKaltmiete Float
+  neueKaltmiete Float
+  grund         String?
+
+  createdAt DateTime @default(now())
+
+  @@index([mietverhaeltnisId])
+}
+
+/// Modernisierungs- / Sanierungsmaßnahme an einem Objekt
+model Sanierung {
+  id       String @id @default(cuid())
+  objektId String
+  objekt   Objekt @relation(fields: [objektId], references: [id], onDelete: Cascade)
+
+  titel     String
+  kategorie String // Dach, Fassade, Fenster, Heizung, Elektrik, Bad, Sonstiges
+  datum     DateTime
+
+  beschreibung String?
+  kosten       Float?
+
+  /// geplant | in_arbeit | abgeschlossen
+  status String @default("geplant")
+
+  /// Ablage-Hinweis / Dateiname für zugehörige Belege (manuell gepflegt)
+  belegHinweis String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([objektId])
+}
