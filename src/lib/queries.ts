@@ -182,6 +182,43 @@ export async function getMieterUebersicht() {
   });
 }
 
+export async function getObjektListe() {
+  return prisma.objekt.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+}
+
+const KONTAKT_KATEGORIEN = [
+  "Elektrik",
+  "Gas/Wasser/Sanitär",
+  "Dachdecker",
+  "Schornsteinfeger",
+  "Hausverwaltung",
+  "Sonstiges",
+];
+
+export async function getKontakteGruppiert() {
+  const kontakte = await prisma.kontakt.findMany({
+    include: { objekt: { select: { id: true, name: true } } },
+    orderBy: { name: "asc" },
+  });
+
+  const kategorien = [
+    ...KONTAKT_KATEGORIEN,
+    ...Array.from(new Set(kontakte.map((k) => k.kategorie))).filter(
+      (k) => !KONTAKT_KATEGORIEN.includes(k)
+    ),
+  ];
+
+  return kategorien
+    .map((kategorie) => ({
+      kategorie,
+      kontakte: kontakte.filter((k) => k.kategorie === kategorie),
+    }))
+    .filter((gruppe) => gruppe.kontakte.length > 0);
+}
+
 export async function getSanierungenNachObjekt() {
   const objekte = await prisma.objekt.findMany({
     include: {

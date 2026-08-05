@@ -12,6 +12,7 @@ async function main() {
   await prisma.mieterhoehung.deleteMany();
   await prisma.mietverhaeltnis.deleteMany();
   await prisma.sanierung.deleteMany();
+  await prisma.kontakt.deleteMany();
   await prisma.wohnung.deleteMany();
   await prisma.objekt.deleteMany();
 
@@ -109,6 +110,8 @@ async function main() {
     data: {
       wohnungId: whgErdgeschoss.id,
       mieterName: "Familie Schulz",
+      telefon: "0341 5551234",
+      email: "schulz.familie@example.com",
       einzugsdatum: new Date("2020-03-01"),
       kaution: 1470,
       kaltmiete: 508,
@@ -130,6 +133,8 @@ async function main() {
     data: {
       wohnungId: whg1OgLinks.id,
       mieterName: "Herr Dr. Nowak",
+      telefon: "0170 1234567",
+      email: "j.nowak@example.com",
       einzugsdatum: new Date("2018-09-15"),
       kaution: 1836,
       kaltmiete: 578,
@@ -289,6 +294,8 @@ async function main() {
     data: {
       wohnungId: whgEtw.id,
       mieterName: "Herr Vogel",
+      telefon: "0351 4432211",
+      email: "vogel.dresden@example.com",
       einzugsdatum: new Date("2021-04-01"),
       kaution: 2220,
       kaltmiete: 740,
@@ -316,6 +323,53 @@ async function main() {
       kosten: 6200,
       status: "abgeschlossen",
     },
+  });
+
+  console.log("Lege Kontakte an...");
+  await prisma.kontakt.createMany({
+    data: [
+      {
+        kategorie: "Elektrik",
+        name: "Elektro Richter GmbH",
+        ansprechpartner: "Herr Richter",
+        telefon: "0341 9988776",
+        email: "info@elektro-richter.de",
+        notizen: "Zuverlässig, auch für Notfälle abends erreichbar",
+      },
+      {
+        kategorie: "Gas/Wasser/Sanitär",
+        name: "Sanitär Krause & Söhne",
+        telefon: "0341 4455667",
+        email: "kontakt@krause-sanitaer.de",
+      },
+      {
+        kategorie: "Dachdecker",
+        name: "Dachdeckerei Vogt",
+        telefon: "0341 7766554",
+        adresse: "Torgauer Str. 45, 04315 Leipzig",
+      },
+      {
+        kategorie: "Schornsteinfeger",
+        name: "Bezirksschornsteinfeger Hoffmann",
+        telefon: "0341 2233445",
+        notizen: "Zuständig für MFH Lindenstraße und ETW Amselweg",
+      },
+      {
+        kategorie: "Hausverwaltung",
+        name: "WEG-Verwaltung Dresden Süd",
+        ansprechpartner: "Frau Lehmann",
+        telefon: "0351 6677889",
+        email: "lehmann@weg-dresden-sued.de",
+        objektId: etw.id,
+      },
+      {
+        kategorie: "Sonstiges",
+        name: "Hausmeisterservice Klein",
+        telefon: "0341 3344556",
+        notizen: "Winterdienst, Treppenhausreinigung",
+        objektId: mfh.id,
+      },
+    ],
   });
 
   console.log("Seed abgeschlossen.");

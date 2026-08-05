@@ -38,6 +38,7 @@ model Objekt {
 
   wohnungen   Wohnung[]
   sanierungen Sanierung[]
+  kontakte    Kontakt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -79,6 +80,8 @@ model Mietverhaeltnis {
   wohnung   Wohnung @relation(fields: [wohnungId], references: [id], onDelete: Cascade)
 
   mieterName   String
+  telefon      String?
+  email        String?
   einzugsdatum DateTime
   auszugsdatum DateTime?
 
@@ -144,4 +147,28 @@ model Sanierung {
   updatedAt DateTime @updatedAt
 
   @@index([objektId])
+}
+
+/// Kontakt für Gewerke / Dienstleister (z.B. Elektrik, Hausverwaltung).
+/// Ohne objektId = portfolioweit gültig (z.B. genereller Elektriker),
+/// mit objektId = nur für dieses eine Objekt relevant (z.B. Hausverwaltung einer ETW).
+model Kontakt {
+  id        String  @id @default(cuid())
+  kategorie String // Elektrik, Gas/Wasser/Sanitär, Dachdecker, Schornsteinfeger, Hausverwaltung, Sonstiges
+
+  name            String // Firma oder Name
+  ansprechpartner String?
+  telefon         String?
+  email           String?
+  adresse         String?
+  notizen         String?
+
+  objektId String?
+  objekt   Objekt? @relation(fields: [objektId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([objektId])
+  @@index([kategorie])
 }

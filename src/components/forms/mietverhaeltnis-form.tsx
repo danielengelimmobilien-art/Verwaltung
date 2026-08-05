@@ -19,6 +19,22 @@ function MietverhaeltnisFields({ mv }: { mv?: Mietverhaeltnis }) {
       <Field label="Mieter" name="mieterName" defaultValue={mv?.mieterName} required />
       <FieldRow>
         <Field
+          label="Telefon"
+          name="telefon"
+          type="tel"
+          defaultValue={mv?.telefon}
+          placeholder="z.B. 0170 1234567"
+        />
+        <Field
+          label="E-Mail"
+          name="email"
+          type="email"
+          defaultValue={mv?.email}
+          placeholder="z.B. mieter@example.com"
+        />
+      </FieldRow>
+      <FieldRow>
+        <Field
           label="Einzugstermin"
           name="einzugsdatum"
           type="date"

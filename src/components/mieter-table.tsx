@@ -26,6 +26,8 @@ export function MieterTable({ zeilen }: { zeilen: Zeile[] }) {
         z.wohnung.bezeichnung,
         z.wohnung.lageImObjekt,
         z.mietverhaeltnis?.mieterName ?? "",
+        z.mietverhaeltnis?.telefon ?? "",
+        z.mietverhaeltnis?.email ?? "",
       ]
         .join(" ")
         .toLowerCase()
@@ -75,7 +77,19 @@ export function MieterTable({ zeilen }: { zeilen: Zeile[] }) {
                 </td>
                 <td className="px-4 py-3">
                   {z.mietverhaeltnis ? (
-                    z.mietverhaeltnis.mieterName
+                    <div>
+                      <div className="font-medium">{z.mietverhaeltnis.mieterName}</div>
+                      {z.mietverhaeltnis.telefon && (
+                        <div className="text-xs text-[var(--muted)]">
+                          {z.mietverhaeltnis.telefon}
+                        </div>
+                      )}
+                      {z.mietverhaeltnis.email && (
+                        <div className="text-xs text-[var(--muted)]">
+                          {z.mietverhaeltnis.email}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-[var(--muted)]">unvermietet</span>
                   )}

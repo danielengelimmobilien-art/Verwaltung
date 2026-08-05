@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { getPortfolioKennzahlen } from "@/lib/queries";
-import { formatEuro, performanceLevel } from "@/lib/calc";
+import { formatEuro } from "@/lib/calc";
 import { StatCard } from "@/components/ui/stat-card";
 import { ObjektCard } from "@/components/objekt-card";
-import { RentComparisonChart } from "@/components/charts/rent-comparison-chart";
-import { CashflowChart } from "@/components/charts/cashflow-chart";
+import { RentBrowserChart } from "@/components/charts/rent-browser-chart";
+import { CashflowBrowserChart } from "@/components/charts/cashflow-browser-chart";
 
 export default async function DashboardPage() {
   const kpi = await getPortfolioKennzahlen();
-  const level = performanceLevel(kpi.abweichungProzent);
   const vermietungsquote = kpi.anzahlWohnungen
     ? Math.round((kpi.anzahlVermietet / kpi.anzahlWohnungen) * 100)
     : 0;
@@ -31,17 +30,11 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           label="Nettokaltmiete gesamt / Monat"
           value={formatEuro(kpi.gesamtKaltmiete)}
           hint={`${kpi.anzahlVermietet}/${kpi.anzahlWohnungen} Einheiten vermietet`}
-        />
-        <StatCard
-          label="Ø Nettokaltmiete / m²"
-          value={`${kpi.istProQmSchnitt.toFixed(2)} €`}
-          hint={`Ziel: ${kpi.zielProQmSchnitt.toFixed(2)} €/m²`}
-          tone={level === "kritisch" ? "bad" : level === "beobachten" ? "warn" : "good"}
         />
         <StatCard
           label="Cashflow / Monat"
@@ -57,32 +50,27 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
-        <div className="card p-5">
-          <h2 className="font-semibold mb-1">Miete/m² je Objekt: Ist vs. Ziel</h2>
-          <p className="text-xs text-[var(--muted)] mb-4">
-            Durchschnittliche Nettokaltmiete pro Quadratmeter im Vergleich zur Zielmiete
-          </p>
-          <RentComparisonChart
-            data={kpi.objekte.map((o) => ({
-              name: o.name,
-              ist: Number(o.kennzahlen.istProQmSchnitt.toFixed(2)),
-              ziel: Number(o.kennzahlen.zielProQmSchnitt.toFixed(2)),
-            }))}
-          />
-        </div>
-        <div className="card p-5">
-          <h2 className="font-semibold mb-1">Cashflow je Objekt</h2>
-          <p className="text-xs text-[var(--muted)] mb-4">
-            Nettokaltmiete gesamt im Vergleich zur monatlichen Bankrate
-          </p>
-          <CashflowChart
-            data={kpi.objekte.map((o) => ({
-              name: o.name,
-              miete: Math.round(o.kennzahlen.gesamtKaltmiete),
-              bankrate: Math.round(o.bankrateMonatlich ?? 0),
-            }))}
-          />
-        </div>
+        <CashflowBrowserChart
+          objekte={kpi.objekte.map((o) => ({
+            id: o.id,
+            name: o.name,
+            miete: Math.round(o.kennzahlen.gesamtKaltmiete),
+            bankrate: Math.round(o.bankrateMonatlich ?? 0),
+          }))}
+        />
+        <RentBrowserChart
+          objekte={kpi.objekte.map((o) => ({
+            id: o.id,
+            name: o.name,
+            ist: Number(o.kennzahlen.istProQmSchnitt.toFixed(2)),
+            ziel: Number(o.kennzahlen.zielProQmSchnitt.toFixed(2)),
+            wohnungen: o.wohnungen.map((w) => ({
+              name: w.bezeichnung,
+              ist: Number(w.istProQm.toFixed(2)),
+              ziel: Number((w.zielmieteProQm ?? 0).toFixed(2)),
+            })),
+          }))}
+        />
       </div>
 
       <div>

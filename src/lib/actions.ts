@@ -141,6 +141,8 @@ export async function createMietverhaeltnis(
     data: {
       wohnungId,
       mieterName: str(formData, "mieterName") ?? "",
+      telefon: str(formData, "telefon"),
+      email: str(formData, "email"),
       einzugsdatum: date(formData, "einzugsdatum") ?? new Date(),
       kaution: num(formData, "kaution"),
       kaltmiete: num(formData, "kaltmiete") ?? 0,
@@ -163,6 +165,8 @@ export async function updateMietverhaeltnis(
     where: { id },
     data: {
       mieterName: str(formData, "mieterName") ?? undefined,
+      telefon: str(formData, "telefon"),
+      email: str(formData, "email"),
       einzugsdatum: date(formData, "einzugsdatum") ?? undefined,
       kaution: num(formData, "kaution"),
       kaltmiete: num(formData, "kaltmiete") ?? undefined,
@@ -271,4 +275,44 @@ export async function deleteSanierung(id: string, objektId: string) {
   await prisma.sanierung.delete({ where: { id } });
   revalidatePath("/sanierung");
   revalidatePath(`/objekte/${objektId}`);
+}
+
+// ---------- Kontakt ----------
+
+export async function createKontakt(formData: FormData) {
+  await prisma.kontakt.create({
+    data: {
+      kategorie: str(formData, "kategorie") ?? "Sonstiges",
+      name: str(formData, "name") ?? "Neuer Kontakt",
+      ansprechpartner: str(formData, "ansprechpartner"),
+      telefon: str(formData, "telefon"),
+      email: str(formData, "email"),
+      adresse: str(formData, "adresse"),
+      notizen: str(formData, "notizen"),
+      objektId: str(formData, "objektId"),
+    },
+  });
+  revalidatePath("/kontakte");
+}
+
+export async function updateKontakt(id: string, formData: FormData) {
+  await prisma.kontakt.update({
+    where: { id },
+    data: {
+      kategorie: str(formData, "kategorie") ?? undefined,
+      name: str(formData, "name") ?? undefined,
+      ansprechpartner: str(formData, "ansprechpartner"),
+      telefon: str(formData, "telefon"),
+      email: str(formData, "email"),
+      adresse: str(formData, "adresse"),
+      notizen: str(formData, "notizen"),
+      objektId: str(formData, "objektId"),
+    },
+  });
+  revalidatePath("/kontakte");
+}
+
+export async function deleteKontakt(id: string) {
+  await prisma.kontakt.delete({ where: { id } });
+  revalidatePath("/kontakte");
 }

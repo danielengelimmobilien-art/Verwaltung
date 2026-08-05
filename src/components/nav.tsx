@@ -9,6 +9,7 @@ const links = [
   { href: "/objekte", label: "Objekte" },
   { href: "/mieter", label: "Mieter" },
   { href: "/sanierung", label: "Sanierung" },
+  { href: "/kontakte", label: "Kontakte" },
 ];
 
 export function Nav() {
