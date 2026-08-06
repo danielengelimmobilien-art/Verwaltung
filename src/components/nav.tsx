@@ -13,6 +13,7 @@ import {
   FileTextIcon,
 } from "@/components/ui/icons";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { GlobalSearch } from "@/components/global-search";
 
 const links = [
   { href: "/", label: "Übersicht", icon: GridIcon },
@@ -63,6 +64,7 @@ export function Nav() {
             })}
           </nav>
           <div className="w-px h-6 bg-[var(--border)] shrink-0 mx-0.5" />
+          <GlobalSearch />
           <ThemeToggle />
         </div>
       </div>

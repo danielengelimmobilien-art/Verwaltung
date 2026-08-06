@@ -54,14 +54,22 @@ export function RentComparisonChart({
               <Cell key={i} fill={performanceFarbe(zielAbweichungProzent(d.ist, d.ziel))} />
             ))}
           </Bar>
-          <Bar dataKey="ziel" name="Zielmiete/m²" fill="var(--surface-muted)" radius={[4, 4, 0, 0]} />
+          <Bar
+            dataKey="ziel"
+            name="Zielmiete/m²"
+            fill="var(--accent)"
+            fillOpacity={0.55}
+            stroke="var(--accent)"
+            strokeWidth={1.5}
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-[var(--muted)]">
         <LegendSwatch color="var(--good)" label="Ist-Miete: auf Zielkurs (≥ -15 %)" />
         <LegendSwatch color="var(--warn)" label="beobachten (-15 % bis -30 %)" />
         <LegendSwatch color="var(--bad)" label="kritisch (< -30 %)" />
-        <LegendSwatch color="var(--surface-muted)" border label="Zielmiete/m²" />
+        <LegendSwatch color="var(--accent)" label="Zielmiete/m²" />
       </div>
     </div>
   );

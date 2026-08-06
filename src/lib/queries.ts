@@ -152,8 +152,9 @@ export async function getPortfolioKennzahlen() {
   };
 }
 
-export async function getMieterUebersicht() {
+export async function getMieterUebersicht(objektId?: string) {
   const wohnungen = await prisma.wohnung.findMany({
+    where: objektId ? { objektId } : undefined,
     include: {
       objekt: true,
       mietverhaeltnisse: {
@@ -217,6 +218,21 @@ export async function getKontakteGruppiert() {
       kontakte: kontakte.filter((k) => k.kategorie === kategorie),
     }))
     .filter((gruppe) => gruppe.kontakte.length > 0);
+}
+
+export async function getKontakteFuerObjekt(objektId: string) {
+  return prisma.kontakt.findMany({
+    where: { objektId },
+    include: { objekt: { select: { id: true, name: true } } },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function getSanierungenFuerObjekt(objektId: string) {
+  return prisma.sanierung.findMany({
+    where: { objektId },
+    orderBy: { datum: "desc" },
+  });
 }
 
 export async function getSanierungenNachObjekt() {

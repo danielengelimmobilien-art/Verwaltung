@@ -19,10 +19,7 @@ export function ObjektCard({ objekt }: { objekt: ObjektMitKennzahlen }) {
         (objekt.kennzahlen.anzahlVermietet / objekt.kennzahlen.anzahlWohnungen) * 100
       )
     : 0;
-  const leerstandProzent = objekt.kennzahlen.anzahlWohnungen
-    ? 100 - (objekt.kennzahlen.anzahlVermietet / objekt.kennzahlen.anzahlWohnungen) * 100
-    : 0;
-  const leerstandKritisch = leerstandProzent > 5;
+  const unvermietet = objekt.kennzahlen.anzahlWohnungen - objekt.kennzahlen.anzahlVermietet;
 
   return (
     <Link
@@ -77,12 +74,8 @@ export function ObjektCard({ objekt }: { objekt: ObjektMitKennzahlen }) {
         </div>
         <div>
           <div className="text-[var(--muted)] text-xs">Vermietet</div>
-          <div
-            className="font-semibold tabular-nums"
-            style={{ color: leerstandKritisch ? "var(--bad)" : undefined }}
-          >
-            {objekt.kennzahlen.anzahlVermietet}/{objekt.kennzahlen.anzahlWohnungen} ({vermietungsquote}%)
-            {leerstandKritisch && " ⚠"}
+          <div className="font-semibold tabular-nums">
+            {objekt.kennzahlen.anzahlVermietet} vermietet · {unvermietet} unvermietet ({vermietungsquote}%)
           </div>
         </div>
       </div>

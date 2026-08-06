@@ -1,6 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getObjektMitWohnungen } from "@/lib/queries";
+import {
+  getObjektMitWohnungen,
+  getMieterUebersicht,
+  getSanierungenFuerObjekt,
+  getKontakteFuerObjekt,
+  getObjektListe,
+} from "@/lib/queries";
 import { deleteObjekt, deleteWohnung } from "@/lib/actions";
 import {
   formatEuro,
@@ -13,6 +19,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { EuroIcon, TrendUpIcon, HomeIcon, RulerIcon } from "@/components/ui/icons";
 import { PerformanceBadge } from "@/components/ui/badge";
 import { DeleteButton } from "@/components/ui/delete-button";
+import { Collapsible } from "@/components/ui/collapsible";
 import { RentComparisonChart } from "@/components/charts/rent-comparison-chart";
 import { EditObjektButton } from "@/components/forms/objekt-form";
 import { NewWohnungButton, EditWohnungButton } from "@/components/forms/wohnung-form";
@@ -22,6 +29,11 @@ import {
   EndMietverhaeltnisButton,
 } from "@/components/forms/mietverhaeltnis-form";
 import { NewMieterhoehungButton } from "@/components/forms/mieterhoehung-form";
+import { NewSanierungButton } from "@/components/forms/sanierung-form";
+import { NewKontaktButton } from "@/components/forms/kontakt-form";
+import { SanierungTable } from "@/components/sanierung-table";
+import { KontaktCard } from "@/components/kontakt-card";
+import { MieterTable } from "@/components/mieter-table";
 
 const levelLabels = {
   gut: "Auf Zielkurs",
@@ -39,13 +51,16 @@ export default async function ObjektDetailPage({
   const objekt = await getObjektMitWohnungen(id);
   if (!objekt) notFound();
 
+  const [mieterZeilen, sanierungen, kontakte, objektListe] = await Promise.all([
+    getMieterUebersicht(objekt.id),
+    getSanierungenFuerObjekt(objekt.id),
+    getKontakteFuerObjekt(objekt.id),
+    getObjektListe(),
+  ]);
+  const summeSanierungskosten = sanierungen.reduce((s, x) => s + (x.kosten ?? 0), 0);
+
   const gesamtLevel = performanceLevel(objekt.kennzahlen.abweichungProzent);
-  const leerstandProzent = objekt.kennzahlen.anzahlWohnungen
-    ? ((objekt.kennzahlen.anzahlWohnungen - objekt.kennzahlen.anzahlVermietet) /
-        objekt.kennzahlen.anzahlWohnungen) *
-      100
-    : 0;
-  const leerstandKritisch = leerstandProzent > 5;
+  const unvermietet = objekt.kennzahlen.anzahlWohnungen - objekt.kennzahlen.anzahlVermietet;
 
   return (
     <div className="flex flex-col gap-8">
@@ -108,14 +123,7 @@ export default async function ObjektDetailPage({
                 )
               : 0
           } %`}
-          hint={
-            leerstandKritisch
-              ? `Leerstand ${leerstandProzent.toFixed(0)} % (${
-                  objekt.kennzahlen.anzahlWohnungen - objekt.kennzahlen.anzahlVermietet
-                }/${objekt.kennzahlen.anzahlWohnungen} Wohnungen)`
-              : `${objekt.kennzahlen.anzahlVermietet}/${objekt.kennzahlen.anzahlWohnungen} Wohnungen`
-          }
-          tone={leerstandKritisch ? "bad" : "neutral"}
+          hint={`${objekt.kennzahlen.anzahlVermietet} vermietet · ${unvermietet} unvermietet`}
           icon={<HomeIcon />}
         />
       </div>
@@ -258,16 +266,46 @@ export default async function ObjektDetailPage({
         )}
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[var(--muted)]">
-          Sanierungs- und Modernisierungsmaßnahmen dieses Objekts:
-        </p>
-        <Link
-          href={`/sanierung#${objekt.id}`}
-          className="text-sm text-[var(--brand)] font-medium"
+      <div className="flex flex-col gap-4">
+        <Collapsible
+          title="Mieter"
+          subtitle={`${mieterZeilen.filter((z) => z.mietverhaeltnis).length} von ${
+            mieterZeilen.length
+          } Wohnungen vermietet`}
         >
-          Zur Sanierungsübersicht →
-        </Link>
+          <MieterTable zeilen={mieterZeilen} />
+        </Collapsible>
+
+        <Collapsible
+          title="Sanierung & Modernisierung"
+          subtitle={`${sanierungen.length} Maßnahme(n) · ${formatEuro(summeSanierungskosten)}`}
+          actions={<NewSanierungButton objektId={objekt.id} />}
+        >
+          <SanierungTable sanierungen={sanierungen} objektId={objekt.id} />
+        </Collapsible>
+
+        <Collapsible
+          title="Kontakte"
+          subtitle={`${kontakte.length} Kontakt(e) für dieses Objekt`}
+          actions={<NewKontaktButton objekte={objektListe} />}
+        >
+          {kontakte.length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">
+              Noch keine Kontakte für dieses Objekt hinterlegt. Portfolioweite Kontakte findest
+              du unter{" "}
+              <Link href="/kontakte" className="text-[var(--brand)] font-medium">
+                Kontakte
+              </Link>
+              .
+            </p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {kontakte.map((k) => (
+                <KontaktCard key={k.id} kontakt={k} objekte={objektListe} zeigeObjektBadge={false} />
+              ))}
+            </div>
+          )}
+        </Collapsible>
       </div>
     </div>
   );
