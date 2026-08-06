@@ -17,6 +17,7 @@ sind direkt in der Oberfläche editierbar.
   lokal und produktiv verwendet – der Wechsel ist nur eine andere
   `DATABASE_URL`, kein Code- oder Schema-Unterschied.
 - **Recharts** für die Diagramme
+- **pdf-parse** (pdfjs-dist) für die Texterkennung beim PDF-Kontoauszug-Import
 
 ## Lokal starten
 
@@ -87,6 +88,32 @@ und blendet "Bankkonto verbinden" aus.
 
 **Kosten:** GoCardless Bank Account Data hat für kleines Volumen (wenige
 End-Nutzer/Konten wie hier) einen kostenlosen Tarif.
+
+### Alternative: Kontoauszug als PDF hochladen
+
+Unabhängig von GoCardless lässt sich auf **Zahlungen → PDF-Kontoauszug
+hochladen** monatlich ein Kontoauszug als PDF hochladen (z.B. Export aus dem
+Online-Banking). Die Buchungen werden automatisch erkannt (Datum, Betrag,
+Verwendungszweck), vor dem Speichern in einer Tabelle zur Kontrolle
+angezeigt und lassen sich dort korrigieren, bevor sie übernommen werden.
+Danach läuft dieselbe automatische Zuordnung wie bei der Live-Anbindung:
+
+- **Eingehende Zahlungen** werden – wo per Betrag/Name eindeutig möglich –
+  automatisch dem passenden Mietverhältnis zugeordnet
+- **Ausgaben** (negative Beträge) werden, wenn das Konto bereits einem
+  Objekt zugeordnet ist oder Objektname/Straße/Ort im Verwendungszweck
+  erkennbar sind, automatisch einem Objekt zugeordnet und erscheinen unter
+  "Betriebskosten-relevante Zahlungen je Objekt" – als Grundlage für die
+  Betriebskostenabrechnung. Uneindeutige Buchungen landen unter "Nicht
+  zugeordnete Buchungen" zur manuellen Zuordnung (Mietverhältnis **oder**
+  Objekt + Betriebskosten-Kategorie).
+
+Die Texterkennung ist heuristisch (Muster "Datum ... Text ... Betrag[+/-]")
+und deckt die gängigsten deutschen Kontoauszug-Exporte ab, aber nicht
+zwangsläufig jedes Bankformat – deshalb die Kontrollansicht vor dem
+Speichern. Buchungen ohne erkennbares Vorzeichen werden zunächst als
+eingehend (positiv) angenommen und lassen sich vor dem Import direkt in der
+Tabelle korrigieren.
 
 ## Sanierungs-/Modernisierungsunterlagen aus lokalen Ordnern
 

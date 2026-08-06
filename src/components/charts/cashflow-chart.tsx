@@ -52,8 +52,8 @@ export function CashflowChart({
           }}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="miete" name="Nettokaltmiete" fill="var(--good)" radius={[4, 4, 0, 0]} />
         <Bar dataKey="bankrate" name="Bankrate" fill="var(--bad)" radius={[4, 4, 0, 0]} fillOpacity={0.6} />
+        <Bar dataKey="miete" name="Nettokaltmiete" fill="var(--good)" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

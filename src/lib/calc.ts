@@ -57,12 +57,25 @@ export function maskeIban(iban: string | null | undefined): string {
   return `•••• ${bereinigt.slice(-4)}`;
 }
 
-/** Performance-Ampel je nach Abweichung von der Zielmiete */
+/**
+ * Performance-Ampel je nach Abweichung der Ist- von der Zielmiete:
+ * mehr als 30 % unter Ziel = kritisch (rot), mehr als 15 % unter Ziel =
+ * beobachten (gelb), sonst gut (grün).
+ */
 export function performanceLevel(
   abweichungProzent: number | null
 ): "gut" | "beobachten" | "kritisch" | "unbekannt" {
   if (abweichungProzent === null) return "unbekannt";
-  if (abweichungProzent >= -2) return "gut";
-  if (abweichungProzent >= -10) return "beobachten";
-  return "kritisch";
+  if (abweichungProzent < -30) return "kritisch";
+  if (abweichungProzent < -15) return "beobachten";
+  return "gut";
+}
+
+/** Farbe (CSS-Variable) für die Ist-Miete-Balken in Diagrammen, je Performance-Level */
+export function performanceFarbe(abweichungProzent: number | null): string {
+  const level = performanceLevel(abweichungProzent);
+  if (level === "kritisch") return "var(--bad)";
+  if (level === "beobachten") return "var(--warn)";
+  if (level === "gut") return "var(--good)";
+  return "var(--muted)";
 }

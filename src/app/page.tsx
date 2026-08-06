@@ -12,6 +12,10 @@ export default async function DashboardPage() {
   const vermietungsquote = kpi.anzahlWohnungen
     ? Math.round((kpi.anzahlVermietet / kpi.anzahlWohnungen) * 100)
     : 0;
+  const leerstandProzent = kpi.anzahlWohnungen
+    ? ((kpi.anzahlWohnungen - kpi.anzahlVermietet) / kpi.anzahlWohnungen) * 100
+    : 0;
+  const leerstandKritisch = leerstandProzent > 5;
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,7 +52,14 @@ export default async function DashboardPage() {
         <StatCard
           label="Vermietungsquote"
           value={`${vermietungsquote} %`}
-          hint={`${kpi.anzahlVermietet} von ${kpi.anzahlWohnungen} Wohnungen`}
+          hint={
+            leerstandKritisch
+              ? `Leerstand ${leerstandProzent.toFixed(0)} % (${
+                  kpi.anzahlWohnungen - kpi.anzahlVermietet
+                } von ${kpi.anzahlWohnungen} Wohnungen)`
+              : `${kpi.anzahlVermietet} von ${kpi.anzahlWohnungen} Wohnungen`
+          }
+          tone={leerstandKritisch ? "bad" : "neutral"}
           icon={<HomeIcon />}
         />
       </div>

@@ -40,6 +40,7 @@ model Objekt {
   sanierungen Sanierung[]
   kontakte    Kontakt[]
   bankkonten  Bankkonto[]
+  kontobewegungen Kontobewegung[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -193,7 +194,10 @@ model Bankkonto {
   /// GoCardless account id (nach erfolgreicher Verbindung)
   gocardlessAccountId String?
 
-  /// ausstehend | verbunden | fehler | getrennt
+  /// gocardless (Live-Anbindung) | manuell (nur per PDF-Kontoauszug befüllt)
+  quelle String @default("gocardless")
+
+  /// ausstehend | verbunden | manuell | fehler
   status String @default("ausstehend")
   fehler String?
 
@@ -211,14 +215,19 @@ model Bankkonto {
 }
 
 /// Einzelne Buchung eines verbundenen Bankkontos, ggf. einem Mietverhältnis
-/// zur Zahlungsprüfung zugeordnet (automatisch per Betrag/Name oder manuell).
+/// (Mietzahlung) oder einem Objekt (sonstige Zahlung, z.B. für die
+/// Betriebskostenabrechnung) zugeordnet - automatisch per Betrag/Name oder manuell.
 model Kontobewegung {
   id          String    @id @default(cuid())
   bankkontoId String
   bankkonto   Bankkonto @relation(fields: [bankkontoId], references: [id], onDelete: Cascade)
 
-  /// GoCardless transactionId (Deduplizierung beim Sync)
+  /// Eindeutige ID zur Deduplizierung: GoCardless transactionId oder bei
+  /// PDF-Import ein Hash aus Datum/Betrag/Verwendungszweck
   externeId String
+
+  /// gocardless | pdf_import
+  quelle String @default("gocardless")
 
   datum            DateTime
   betrag           Float
@@ -229,6 +238,14 @@ model Kontobewegung {
   mietverhaeltnisId String?
   mietverhaeltnis   Mietverhaeltnis? @relation(fields: [mietverhaeltnisId], references: [id], onDelete: SetNull)
 
+  /// Zuordnung zu einem Objekt bei sonstigen Zahlungen (Betriebskosten,
+  /// Ausgaben) - unabhängig von mietverhaeltnisId
+  objektId       String?
+  objekt         Objekt? @relation(fields: [objektId], references: [id], onDelete: SetNull)
+  /// Betriebskosten-Kategorie, z.B. Hausmeister, Versicherung, Wasser/Abwasser,
+  /// Strom, Müllabfuhr, Wartung/Instandhaltung, Sonstiges
+  bkKategorie String?
+
   automatischZugeordnet Boolean @default(false)
 
   createdAt DateTime @default(now())
@@ -236,6 +253,7 @@ model Kontobewegung {
   @@unique([bankkontoId, externeId])
   @@index([bankkontoId])
   @@index([mietverhaeltnisId])
+  @@index([objektId])
 }
 
 /// Textvorlage für wiederkehrende Schreiben (z.B. Mahnung, Mieterhöhung).

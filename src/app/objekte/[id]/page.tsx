@@ -40,6 +40,12 @@ export default async function ObjektDetailPage({
   if (!objekt) notFound();
 
   const gesamtLevel = performanceLevel(objekt.kennzahlen.abweichungProzent);
+  const leerstandProzent = objekt.kennzahlen.anzahlWohnungen
+    ? ((objekt.kennzahlen.anzahlWohnungen - objekt.kennzahlen.anzahlVermietet) /
+        objekt.kennzahlen.anzahlWohnungen) *
+      100
+    : 0;
+  const leerstandKritisch = leerstandProzent > 5;
 
   return (
     <div className="flex flex-col gap-8">
@@ -102,7 +108,14 @@ export default async function ObjektDetailPage({
                 )
               : 0
           } %`}
-          hint={`${objekt.kennzahlen.anzahlVermietet}/${objekt.kennzahlen.anzahlWohnungen} Wohnungen`}
+          hint={
+            leerstandKritisch
+              ? `Leerstand ${leerstandProzent.toFixed(0)} % (${
+                  objekt.kennzahlen.anzahlWohnungen - objekt.kennzahlen.anzahlVermietet
+                }/${objekt.kennzahlen.anzahlWohnungen} Wohnungen)`
+              : `${objekt.kennzahlen.anzahlVermietet}/${objekt.kennzahlen.anzahlWohnungen} Wohnungen`
+          }
+          tone={leerstandKritisch ? "bad" : "neutral"}
           icon={<HomeIcon />}
         />
       </div>

@@ -61,3 +61,31 @@ export function findeZahlungsKandidat(
   );
   return betragsTreffer.length === 1 ? betragsTreffer[0].id : null;
 }
+
+export type Objektkandidat = {
+  id: string;
+  name: string;
+  strasse: string;
+  ort: string;
+};
+
+function objektTokens(o: Objektkandidat): string[] {
+  return [
+    ...nameTokens(o.name),
+    ...nameTokens(o.strasse.replace(/\d+/g, " ")),
+    ...nameTokens(o.ort),
+  ];
+}
+
+/** Ordnet eine sonstige Zahlung (z.B. Betriebskosten-Ausgabe) anhand von
+ * Objektname/Straße/Ort im Freitext eindeutig einem Objekt zu - sonst null. */
+export function findeObjektKandidat(
+  freitext: string,
+  kandidaten: Objektkandidat[]
+): string | null {
+  const text = freitext.toLowerCase();
+  const treffer = kandidaten.filter((o) =>
+    objektTokens(o).some((token) => text.includes(token))
+  );
+  return treffer.length === 1 ? treffer[0].id : null;
+}

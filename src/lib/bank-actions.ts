@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { warmmiete } from "@/lib/calc";
 import {
@@ -16,7 +17,8 @@ import {
   deleteRequisition,
   pruefeGoCardlessKonfiguration,
 } from "@/lib/gocardless";
-import { findeZahlungsKandidat } from "@/lib/payment-matching";
+import { findeZahlungsKandidat, findeObjektKandidat } from "@/lib/payment-matching";
+import { extrahiereTextAusPdf, parseKontoauszugText } from "@/lib/pdf-import";
 
 function str(formData: FormData, key: string): string | null {
   const raw = formData.get(key);
@@ -205,6 +207,41 @@ async function ordneZahlungenAutomatischZu(bankkonto: { id: string; objektId: st
   }
 }
 
+/** Ordnet unzugeordnete Ausgaben (negative Beträge) eines Kontos einem Objekt
+ * zu - für die Betriebskostenabrechnung. Ist das Konto bereits einem Objekt
+ * zugeordnet, gilt das direkt für alle Ausgaben; sonst wird per Freitext
+ * (Objektname/Straße/Ort) versucht, eindeutig zuzuordnen. */
+async function ordneBetriebskostenAutomatischZu(bankkontoId: string) {
+  const bankkonto = await prisma.bankkonto.findUniqueOrThrow({ where: { id: bankkontoId } });
+  const unzugeordnete = await prisma.kontobewegung.findMany({
+    where: { bankkontoId, mietverhaeltnisId: null, objektId: null, betrag: { lt: 0 } },
+  });
+  if (unzugeordnete.length === 0) return;
+
+  if (bankkonto.objektId) {
+    await prisma.kontobewegung.updateMany({
+      where: { id: { in: unzugeordnete.map((u) => u.id) } },
+      data: { objektId: bankkonto.objektId, automatischZugeordnet: true },
+    });
+    return;
+  }
+
+  const objekte = await prisma.objekt.findMany({
+    select: { id: true, name: true, strasse: true, ort: true },
+  });
+
+  for (const bewegung of unzugeordnete) {
+    const text = `${bewegung.absender ?? ""} ${bewegung.verwendungszweck ?? ""}`;
+    const treffer = findeObjektKandidat(text, objekte);
+    if (treffer) {
+      await prisma.kontobewegung.update({
+        where: { id: bewegung.id },
+        data: { objektId: treffer, automatischZugeordnet: true },
+      });
+    }
+  }
+}
+
 export async function synchronisiereBankkonto(bankkontoId: string) {
   const bankkonto = await prisma.bankkonto.findUniqueOrThrow({ where: { id: bankkontoId } });
   if (!bankkonto.gocardlessAccountId) {
@@ -263,8 +300,113 @@ export async function synchronisiereBankkonto(bankkontoId: string) {
   });
 
   await ordneZahlungenAutomatischZu({ id: bankkonto.id, objektId: bankkonto.objektId });
+  await ordneBetriebskostenAutomatischZu(bankkonto.id);
 
   revalidatePath("/zahlungen");
+}
+
+// ---------- PDF-Kontoauszug-Import ----------
+
+export type AnalysierteZeile = {
+  datum: string;
+  betrag: number;
+  verwendungszweck: string;
+  vorzeichenErkannt: boolean;
+};
+
+export async function analysiereKontoauszug(
+  formData: FormData
+): Promise<{ zeilen: AnalysierteZeile[] }> {
+  const datei = formData.get("datei");
+  if (!(datei instanceof File) || datei.size === 0) {
+    throw new Error("Bitte eine PDF-Datei auswählen.");
+  }
+
+  const bytes = await datei.arrayBuffer();
+  const text = await extrahiereTextAusPdf(Buffer.from(bytes));
+  const buchungen = parseKontoauszugText(text);
+
+  if (buchungen.length === 0) {
+    throw new Error(
+      "Es konnten keine Buchungen erkannt werden. Das PDF-Format dieser Bank wird von der automatischen Erkennung evtl. nicht unterstützt."
+    );
+  }
+
+  return {
+    zeilen: buchungen.map((b) => ({
+      datum: b.datum.toISOString().slice(0, 10),
+      betrag: Math.round(b.betrag * 100) / 100,
+      verwendungszweck: b.verwendungszweck,
+      vorzeichenErkannt: b.vorzeichenErkannt,
+    })),
+  };
+}
+
+export async function importiereKontobewegungen(
+  formData: FormData
+): Promise<{ anzahl: number }> {
+  const bankkontoIdRoh = str(formData, "bankkontoId");
+  const neueBezeichnung = str(formData, "neueBezeichnung");
+  const neuesObjektId = str(formData, "neuesObjektId");
+  const zeilenJson = formData.get("zeilen");
+
+  if (typeof zeilenJson !== "string") {
+    throw new Error("Keine Buchungen übermittelt.");
+  }
+
+  const zeilen: { datum: string; betrag: number; verwendungszweck: string }[] =
+    JSON.parse(zeilenJson);
+  if (zeilen.length === 0) {
+    throw new Error("Keine Buchungen zum Importieren ausgewählt.");
+  }
+
+  let bankkontoId = bankkontoIdRoh;
+  if (!bankkontoId) {
+    const neu = await prisma.bankkonto.create({
+      data: {
+        bezeichnung: neueBezeichnung || "Manuelles Konto (PDF-Import)",
+        quelle: "manuell",
+        status: "manuell",
+        objektId: neuesObjektId,
+      },
+    });
+    bankkontoId = neu.id;
+  }
+
+  for (const z of zeilen) {
+    const datum = new Date(z.datum);
+    if (Number.isNaN(datum.getTime())) continue;
+
+    const externeId = createHash("sha256")
+      .update(`${z.datum}|${z.betrag.toFixed(2)}|${z.verwendungszweck}`)
+      .digest("hex")
+      .slice(0, 40);
+
+    await prisma.kontobewegung.upsert({
+      where: { bankkontoId_externeId: { bankkontoId, externeId } },
+      update: {},
+      create: {
+        bankkontoId,
+        externeId,
+        quelle: "pdf_import",
+        datum,
+        betrag: z.betrag,
+        verwendungszweck: z.verwendungszweck,
+      },
+    });
+  }
+
+  await prisma.bankkonto.update({
+    where: { id: bankkontoId },
+    data: { letzterSync: new Date() },
+  });
+
+  const bankkonto = await prisma.bankkonto.findUniqueOrThrow({ where: { id: bankkontoId } });
+  await ordneZahlungenAutomatischZu({ id: bankkonto.id, objektId: bankkonto.objektId });
+  await ordneBetriebskostenAutomatischZu(bankkonto.id);
+
+  revalidatePath("/zahlungen");
+  return { anzahl: zeilen.length };
 }
 
 // ---------- Verwaltung ----------
@@ -286,18 +428,42 @@ export async function bankkontoTrennen(id: string) {
 
 export async function zahlungZuordnen(kontobewegungId: string, formData: FormData) {
   const mietverhaeltnisId = str(formData, "mietverhaeltnisId");
-  if (!mietverhaeltnisId) return;
-  await prisma.kontobewegung.update({
-    where: { id: kontobewegungId },
-    data: { mietverhaeltnisId, automatischZugeordnet: false },
-  });
+  const objektId = str(formData, "objektId");
+  const bkKategorie = str(formData, "bkKategorie");
+
+  if (mietverhaeltnisId) {
+    await prisma.kontobewegung.update({
+      where: { id: kontobewegungId },
+      data: {
+        mietverhaeltnisId,
+        objektId: null,
+        bkKategorie: null,
+        automatischZugeordnet: false,
+      },
+    });
+  } else if (objektId) {
+    await prisma.kontobewegung.update({
+      where: { id: kontobewegungId },
+      data: {
+        objektId,
+        bkKategorie: bkKategorie ?? "Sonstiges",
+        mietverhaeltnisId: null,
+        automatischZugeordnet: false,
+      },
+    });
+  }
   revalidatePath("/zahlungen");
 }
 
 export async function zahlungZuordnungAufheben(kontobewegungId: string) {
   await prisma.kontobewegung.update({
     where: { id: kontobewegungId },
-    data: { mietverhaeltnisId: null, automatischZugeordnet: false },
+    data: {
+      mietverhaeltnisId: null,
+      objektId: null,
+      bkKategorie: null,
+      automatischZugeordnet: false,
+    },
   });
   revalidatePath("/zahlungen");
 }

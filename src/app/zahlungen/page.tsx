@@ -4,33 +4,38 @@ import {
   getUnzugeordneteKontobewegungen,
   getAktiveMietverhaeltnisListe,
   getObjektListe,
+  getBetriebskostenZahlungen,
 } from "@/lib/queries";
-import { bankkontoTrennen, zahlungZuordnen } from "@/lib/bank-actions";
+import { bankkontoTrennen } from "@/lib/bank-actions";
 import { istGoCardlessKonfiguriert } from "@/lib/gocardless";
 import { formatEuro, formatDatum, formatMonat, maskeIban } from "@/lib/calc";
-import { KontoStatusBadge, ZahlungsBadge } from "@/components/ui/badge";
+import { KontoStatusBadge, ZahlungsBadge, Badge } from "@/components/ui/badge";
 import { BankIcon } from "@/components/ui/icons";
 import { DeleteButton } from "@/components/ui/delete-button";
 import { NewBankkontoButton } from "@/components/forms/bankkonto-form";
 import { SyncButton } from "@/components/forms/bankkonto-sync-button";
+import { PdfImportButton } from "@/components/forms/pdf-import-form";
+import { ZuordnenForm } from "@/components/forms/zuordnen-form";
 
 export default async function ZahlungenPage() {
   const konfiguriert = istGoCardlessKonfiguriert();
-  const [bankkonten, uebersicht, unzugeordnete, mietverhaeltnisListe, objekte] = await Promise.all([
-    getBankkonten(),
-    getZahlungsuebersicht(),
-    getUnzugeordneteKontobewegungen(),
-    getAktiveMietverhaeltnisListe(),
-    getObjektListe(),
-  ]);
+  const [bankkonten, uebersicht, unzugeordnete, mietverhaeltnisListe, objekte, betriebskosten] =
+    await Promise.all([
+      getBankkonten(),
+      getZahlungsuebersicht(),
+      getUnzugeordneteKontobewegungen(),
+      getAktiveMietverhaeltnisListe(),
+      getObjektListe(),
+      getBetriebskostenZahlungen(),
+    ]);
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-bold">Mietzahlungen prüfen</h1>
+        <h1 className="text-2xl font-bold">Zahlungen prüfen</h1>
         <p className="text-[var(--muted)] text-sm mt-1">
-          Bankkonten verbinden und eingehende Zahlungen automatisch mit den erwarteten
-          Mietzahlungen abgleichen
+          Bankkonten verbinden oder Kontoauszüge als PDF hochladen – Mietzahlungen und sonstige
+          Zahlungen werden automatisch zugeordnet
         </p>
       </div>
 
@@ -38,20 +43,27 @@ export default async function ZahlungenPage() {
         <div className="card p-4 text-sm bg-[var(--warn-soft)] border-transparent text-[var(--warn)]">
           GoCardless ist noch nicht konfiguriert. Setze <code>GOCARDLESS_SECRET_ID</code> und{" "}
           <code>GOCARDLESS_SECRET_KEY</code> (kostenloser Account auf{" "}
-          <span className="font-medium">bankaccountdata.gocardless.com</span>), um Bankkonten
-          verbinden zu können – siehe README.
+          <span className="font-medium">bankaccountdata.gocardless.com</span>), um Bankkonten live
+          zu verbinden – siehe README. Der PDF-Kontoauszug-Import funktioniert unabhängig davon
+          bereits jetzt.
         </div>
       )}
 
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Verbundene Bankkonten</h2>
-          {konfiguriert && <NewBankkontoButton objekte={objekte} />}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold text-lg">Bankkonten</h2>
+          <div className="flex items-center gap-2">
+            <PdfImportButton
+              bankkonten={bankkonten.map((b) => ({ id: b.id, bezeichnung: b.bezeichnung }))}
+              objekte={objekte}
+            />
+            {konfiguriert && <NewBankkontoButton objekte={objekte} />}
+          </div>
         </div>
 
         {bankkonten.length === 0 ? (
           <div className="card p-8 text-center text-sm text-[var(--muted)]">
-            Noch kein Bankkonto verbunden.
+            Noch kein Bankkonto verbunden oder angelegt.
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -65,7 +77,8 @@ export default async function ZahlungenPage() {
                     <div>
                       <div className="font-semibold">{b.bezeichnung}</div>
                       <div className="text-xs text-[var(--muted)]">
-                        {b.institutionName ?? "—"} · {maskeIban(b.iban)}
+                        {b.institutionName ?? (b.quelle === "manuell" ? "Manuell / PDF-Import" : "—")}{" "}
+                        · {maskeIban(b.iban)}
                       </div>
                     </div>
                   </div>
@@ -76,13 +89,13 @@ export default async function ZahlungenPage() {
                 </div>
                 {b.fehler && <p className="text-xs text-[var(--bad)]">{b.fehler}</p>}
                 <div className="text-xs text-[var(--muted)]">
-                  Letzter Sync: {b.letzterSync ? formatDatum(b.letzterSync) : "noch nie"}
+                  Letzte Aktualisierung: {b.letzterSync ? formatDatum(b.letzterSync) : "noch nie"}
                 </div>
                 <div className="flex items-center justify-between mt-1 pt-2 border-t border-[var(--border)]">
                   <DeleteButton
                     action={bankkontoTrennen.bind(null, b.id)}
-                    confirmText={`Verbindung zu "${b.bezeichnung}" trennen? Bereits geladene Buchungen bleiben erhalten.`}
-                    label="Trennen"
+                    confirmText={`"${b.bezeichnung}" wirklich entfernen? Bereits geladene Buchungen bleiben erhalten.`}
+                    label="Entfernen"
                   />
                   {b.status === "verbunden" && <SyncButton bankkontoId={b.id} />}
                 </div>
@@ -138,14 +151,64 @@ export default async function ZahlungenPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="font-semibold text-lg">Nicht zugeordnete Zahlungseingänge</h2>
+        <div>
+          <h2 className="font-semibold text-lg">Betriebskosten-relevante Zahlungen je Objekt</h2>
+          <p className="text-xs text-[var(--muted)] mt-0.5">
+            Ausgaben, die einem Objekt zugeordnet wurden – als Grundlage für die
+            Betriebskostenabrechnung
+          </p>
+        </div>
+        {betriebskosten.length === 0 ? (
+          <div className="card p-6 text-sm text-[var(--muted)]">
+            Noch keine Zahlungen einem Objekt zugeordnet.
+          </div>
+        ) : (
+          betriebskosten.map(({ objekt, bewegungen, summe }) => (
+            <div key={objekt.id} className="card overflow-x-auto">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+                <span className="font-semibold text-sm">{objekt.name}</span>
+                <span className="text-sm font-semibold tabular-nums">{formatEuro(summe)}</span>
+              </div>
+              <table className="w-full text-sm min-w-[700px]">
+                <thead>
+                  <tr className="text-left text-xs text-[var(--muted)] border-b border-[var(--border)]">
+                    <th className="px-4 py-2 font-semibold">Datum</th>
+                    <th className="px-4 py-2 font-semibold">Kategorie</th>
+                    <th className="px-4 py-2 font-semibold">Verwendungszweck</th>
+                    <th className="px-4 py-2 font-semibold text-right">Betrag</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bewegungen.map((b) => (
+                    <tr key={b.id} className="border-b border-[var(--border)] last:border-0">
+                      <td className="px-4 py-2 whitespace-nowrap tabular-nums">
+                        {formatDatum(b.datum)}
+                      </td>
+                      <td className="px-4 py-2">
+                        <Badge tone="brand">{b.bkKategorie ?? "Sonstiges"}</Badge>
+                      </td>
+                      <td className="px-4 py-2 text-[var(--muted)] max-w-sm truncate">
+                        {b.verwendungszweck ?? "–"}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">{formatEuro(b.betrag)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="font-semibold text-lg">Nicht zugeordnete Buchungen</h2>
         {unzugeordnete.length === 0 ? (
           <div className="card p-6 text-sm text-[var(--muted)]">
-            Alle eingegangenen Zahlungen sind zugeordnet.
+            Alle Buchungen sind zugeordnet.
           </div>
         ) : (
           <div className="card overflow-x-auto">
-            <table className="w-full text-sm min-w-[800px]">
+            <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="text-left text-xs text-[var(--muted)] border-b border-[var(--border)]">
                   <th className="px-4 py-3 font-semibold">Datum</th>
@@ -169,22 +232,11 @@ export default async function ZahlungenPage() {
                       {formatEuro(b.betrag)}
                     </td>
                     <td className="px-4 py-3">
-                      <form action={zahlungZuordnen.bind(null, b.id)} className="flex items-center gap-2">
-                        <select name="mietverhaeltnisId" required className="!py-1 text-xs max-w-[220px]">
-                          <option value="">Mietverhältnis wählen…</option>
-                          {mietverhaeltnisListe.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.label}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="submit"
-                          className="text-xs font-medium text-[var(--brand)] hover:underline whitespace-nowrap"
-                        >
-                          Zuordnen
-                        </button>
-                      </form>
+                      <ZuordnenForm
+                        kontobewegungId={b.id}
+                        mietverhaeltnisse={mietverhaeltnisListe}
+                        objekte={objekte}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -196,4 +248,3 @@ export default async function ZahlungenPage() {
     </div>
   );
 }
-

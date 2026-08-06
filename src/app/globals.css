@@ -1,28 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f6f4;
-  --background-accent: #eaf2ec;
+  --background: #f1f5f7;
+  --background-accent: #e6eef4;
   --surface: #ffffff;
-  --surface-muted: #eef1f0;
-  --border: #e1e6e3;
-  --foreground: #17211d;
-  --muted: #5b6b64;
-  --brand: #1f5e4a;
-  --brand-strong: #143f32;
-  --brand-bright: #2f8867;
-  --brand-soft: #e4efe9;
-  --accent: #b8860b;
-  --accent-soft: #f7ecd3;
-  --good: #1c7a4d;
-  --good-soft: #e2f5e9;
-  --warn: #a9660b;
+  --surface-muted: #edf1f4;
+  --border: #e0e6ea;
+  --foreground: #131a21;
+  --muted: #57636f;
+  --brand: #0d7377;
+  --brand-strong: #0a5457;
+  --brand-bright: #14b8a6;
+  --brand-soft: #dcf4f1;
+  --accent: #3b6fd6;
+  --accent-soft: #e6ecfb;
+  --good: #12946e;
+  --good-soft: #dcf5ea;
+  --warn: #b1730f;
   --warn-soft: #fbeed9;
-  --bad: #b3261e;
-  --bad-soft: #fbe4e2;
-  --shadow-sm: 0 1px 2px rgba(23, 33, 29, 0.05);
-  --shadow: 0 1px 2px rgba(23, 33, 29, 0.05), 0 10px 28px -14px rgba(23, 33, 29, 0.22);
-  --shadow-lg: 0 4px 10px rgba(23, 33, 29, 0.06), 0 20px 40px -18px rgba(23, 33, 29, 0.28);
+  --bad: #c5372c;
+  --bad-soft: #fbe3e1;
+  --shadow-sm: 0 1px 2px rgba(11, 20, 30, 0.06);
+  --shadow: 0 1px 2px rgba(11, 20, 30, 0.05), 0 10px 28px -14px rgba(11, 20, 30, 0.24);
+  --shadow-lg: 0 4px 10px rgba(11, 20, 30, 0.07), 0 20px 40px -18px rgba(11, 20, 30, 0.3);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -47,29 +48,83 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0e1310;
-    --background-accent: #131c17;
-    --surface: #171e1b;
-    --surface-muted: #1c2420;
-    --border: #2a3430;
-    --foreground: #ecf1ee;
-    --muted: #99a69f;
-    --brand: #4caf8a;
-    --brand-strong: #6fcaa8;
-    --brand-bright: #5cc79c;
-    --brand-soft: #1c332a;
-    --accent: #e0b84f;
-    --accent-soft: #332912;
-    --good: #4caf8a;
-    --good-soft: #17281f;
-    --warn: #e0a84f;
+    --background: #0a0f14;
+    --background-accent: #101821;
+    --surface: #121a22;
+    --surface-muted: #17212a;
+    --border: #253039;
+    --foreground: #e7edf2;
+    --muted: #8b98a5;
+    --brand: #2dd4c4;
+    --brand-strong: #5eead4;
+    --brand-bright: #34e0c9;
+    --brand-soft: #113431;
+    --accent: #7ca2ff;
+    --accent-soft: #16233a;
+    --good: #34d399;
+    --good-soft: #122a20;
+    --warn: #f2b155;
     --warn-soft: #332a17;
-    --bad: #e46a62;
-    --bad-soft: #331d1b;
+    --bad: #f0776e;
+    --bad-soft: #33201d;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.55);
     --shadow-lg: 0 4px 10px rgba(0, 0, 0, 0.35), 0 24px 48px -18px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
   }
+}
+
+/* Manueller Theme-Umschalter (überschreibt die OS-Einstellung) */
+:root[data-theme="dark"] {
+  --background: #0a0f14;
+  --background-accent: #101821;
+  --surface: #121a22;
+  --surface-muted: #17212a;
+  --border: #253039;
+  --foreground: #e7edf2;
+  --muted: #8b98a5;
+  --brand: #2dd4c4;
+  --brand-strong: #5eead4;
+  --brand-bright: #34e0c9;
+  --brand-soft: #113431;
+  --accent: #7ca2ff;
+  --accent-soft: #16233a;
+  --good: #34d399;
+  --good-soft: #122a20;
+  --warn: #f2b155;
+  --warn-soft: #332a17;
+  --bad: #f0776e;
+  --bad-soft: #33201d;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 4px 10px rgba(0, 0, 0, 0.35), 0 24px 48px -18px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --background: #f1f5f7;
+  --background-accent: #e6eef4;
+  --surface: #ffffff;
+  --surface-muted: #edf1f4;
+  --border: #e0e6ea;
+  --foreground: #131a21;
+  --muted: #57636f;
+  --brand: #0d7377;
+  --brand-strong: #0a5457;
+  --brand-bright: #14b8a6;
+  --brand-soft: #dcf4f1;
+  --accent: #3b6fd6;
+  --accent-soft: #e6ecfb;
+  --good: #12946e;
+  --good-soft: #dcf5ea;
+  --warn: #b1730f;
+  --warn-soft: #fbeed9;
+  --bad: #c5372c;
+  --bad-soft: #fbe3e1;
+  --shadow-sm: 0 1px 2px rgba(11, 20, 30, 0.06);
+  --shadow: 0 1px 2px rgba(11, 20, 30, 0.05), 0 10px 28px -14px rgba(11, 20, 30, 0.24);
+  --shadow-lg: 0 4px 10px rgba(11, 20, 30, 0.07), 0 20px 40px -18px rgba(11, 20, 30, 0.3);
+  color-scheme: light;
 }
 
 * {
@@ -82,8 +137,8 @@ html {
 
 body {
   background:
-    radial-gradient(1100px 520px at 12% -8%, var(--background-accent), transparent 60%),
-    radial-gradient(900px 480px at 100% 0%, var(--background-accent), transparent 55%),
+    radial-gradient(1100px 520px at 10% -10%, var(--brand-soft), transparent 55%),
+    radial-gradient(900px 480px at 100% 0%, var(--accent-soft), transparent 55%),
     var(--background);
   background-attachment: fixed;
   color: var(--foreground);
@@ -156,7 +211,7 @@ dialog {
 }
 
 dialog::backdrop {
-  background: rgba(10, 15, 13, 0.55);
+  background: rgba(6, 10, 16, 0.55);
   backdrop-filter: blur(3px);
 }
 
@@ -166,18 +221,22 @@ dialog::backdrop {
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, var(--brand-bright), var(--brand));
+  background: linear-gradient(135deg, var(--brand-bright), var(--accent));
   color: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 8px 16px -8px rgba(31, 94, 74, 0.55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 8px 18px -8px rgba(59, 111, 214, 0.5);
   transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
 .btn-primary:hover {
-  filter: brightness(1.05);
+  filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14), 0 12px 20px -8px rgba(31, 94, 74, 0.6);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14), 0 14px 24px -8px rgba(59, 111, 214, 0.55);
 }
 
 .btn-primary:active {
   transform: translateY(0);
+}
+
+.brand-underline {
+  background: linear-gradient(90deg, var(--brand-bright), var(--accent));
 }

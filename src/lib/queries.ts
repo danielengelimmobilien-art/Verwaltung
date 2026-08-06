@@ -254,7 +254,7 @@ export async function getZahlungsuebersicht() {
         kontobewegungen: { orderBy: { datum: "desc" } },
       },
     }),
-    prisma.bankkonto.findMany({ where: { status: "verbunden" } }),
+    prisma.bankkonto.findMany({ where: { status: { in: ["verbunden", "manuell"] } } }),
   ]);
 
   mietverhaeltnisse.sort((a, b) => {
@@ -307,12 +307,50 @@ export async function getZahlungsuebersicht() {
 
 export async function getUnzugeordneteKontobewegungen() {
   return prisma.kontobewegung.findMany({
-    where: { mietverhaeltnisId: null, betrag: { gt: 0 } },
+    where: { mietverhaeltnisId: null, objektId: null },
     include: { bankkonto: true },
     orderBy: { datum: "desc" },
-    take: 40,
+    take: 60,
   });
 }
+
+export async function getBetriebskostenZahlungen() {
+  const bewegungen = await prisma.kontobewegung.findMany({
+    where: { objektId: { not: null } },
+    include: { objekt: { select: { id: true, name: true } }, bankkonto: true },
+    orderBy: { datum: "desc" },
+  });
+
+  const gruppen = new Map<
+    string,
+    { objekt: { id: string; name: string }; bewegungen: typeof bewegungen; summe: number }
+  >();
+
+  for (const b of bewegungen) {
+    if (!b.objekt) continue;
+    const gruppe = gruppen.get(b.objekt.id) ?? { objekt: b.objekt, bewegungen: [], summe: 0 };
+    gruppe.bewegungen.push(b);
+    gruppe.summe += b.betrag;
+    gruppen.set(b.objekt.id, gruppe);
+  }
+
+  return Array.from(gruppen.values()).sort((a, b) =>
+    a.objekt.name.localeCompare(b.objekt.name, "de")
+  );
+}
+
+const BK_KATEGORIEN = [
+  "Hausmeister",
+  "Versicherung",
+  "Wasser/Abwasser",
+  "Strom (Gemeinschaft)",
+  "Müllabfuhr",
+  "Wartung/Instandhaltung",
+  "Grundsteuer",
+  "Sonstiges",
+];
+
+export { BK_KATEGORIEN };
 
 export async function getAktiveMietverhaeltnisListe() {
   const mietverhaeltnisse = await prisma.mietverhaeltnis.findMany({
