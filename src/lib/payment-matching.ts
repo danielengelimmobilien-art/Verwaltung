@@ -89,3 +89,47 @@ export function findeObjektKandidat(
   );
   return treffer.length === 1 ? treffer[0].id : null;
 }
+
+export type Kontobewegungskandidat = {
+  id: string;
+  betrag: number;
+  datum: Date;
+  absender: string | null;
+  verwendungszweck: string | null;
+};
+
+/** Ordnet einen Beleg (Rechnung) anhand von Betrag, Datum-Nähe und
+ * Ausstellername einer bereits vorhandenen, noch nicht verknüpften
+ * Kontobewegung zu - sonst null. Verhindert Doppelbuchung, da bereits
+ * verknüpfte Kontobewegungen vom Aufrufer ausgeschlossen werden müssen. */
+export function findeKontobewegungFuerBeleg(
+  belegBetrag: number,
+  belegDatum: Date,
+  aussteller: string,
+  kandidaten: Kontobewegungskandidat[]
+): string | null {
+  const toleranzBetrag = 2;
+  const toleranzTageVorher = 10;
+  const toleranzTageNachher = 60;
+  const ausstellerTokens = nameTokens(aussteller);
+
+  const betragsTreffer = kandidaten.filter(
+    (k) => Math.abs(Math.abs(k.betrag) - belegBetrag) < toleranzBetrag
+  );
+  if (betragsTreffer.length === 0) return null;
+
+  const zeitfensterTreffer = betragsTreffer.filter((k) => {
+    const diffTage = (k.datum.getTime() - belegDatum.getTime()) / 86_400_000;
+    return diffTage >= -toleranzTageVorher && diffTage <= toleranzTageNachher;
+  });
+
+  const pool = zeitfensterTreffer.length > 0 ? zeitfensterTreffer : betragsTreffer;
+  if (pool.length === 1) return pool[0].id;
+
+  const namensTreffer = pool.filter((k) => {
+    const text = `${k.absender ?? ""} ${k.verwendungszweck ?? ""}`.toLowerCase();
+    return ausstellerTokens.some((t) => text.includes(t));
+  });
+
+  return namensTreffer.length === 1 ? namensTreffer[0].id : null;
+}

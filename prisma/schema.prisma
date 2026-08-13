@@ -41,6 +41,7 @@ model Objekt {
   kontakte    Kontakt[]
   bankkonten  Bankkonto[]
   kontobewegungen Kontobewegung[]
+  belege      Beleg[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -248,11 +249,48 @@ model Kontobewegung {
 
   automatischZugeordnet Boolean @default(false)
 
+  beleg Beleg?
+
   createdAt DateTime @default(now())
 
   @@unique([bankkontoId, externeId])
   @@index([bankkontoId])
   @@index([mietverhaeltnisId])
+  @@index([objektId])
+}
+
+/// Eingegangene Rechnung/Beleg (z.B. Handwerkerrechnung), aus einem
+/// hochgeladenen PDF erfasst - wird gegen die Kontobewegungen abgeglichen.
+/// Die Originaldatei wird nicht gespeichert (nur zur Analyse verwendet);
+/// die Ablage der Dokumente erfolgt weiterhin extern durch den Nutzer.
+model Beleg {
+  id String @id @default(cuid())
+
+  aussteller       String
+  rechnungsnummer  String?
+  rechnungsdatum   DateTime
+  betrag           Float
+  beschreibung     String?
+
+  objektId    String?
+  objekt      Objekt? @relation(fields: [objektId], references: [id], onDelete: SetNull)
+  bkKategorie String?
+
+  /// offen | bezahlt
+  status String @default("offen")
+
+  /// Verknüpfung zur passenden Kontobewegung (1:1 - eine Buchung kann nur
+  /// einem Beleg zugeordnet sein, verhindert Doppelbuchung beim Abgleich)
+  kontobewegungId String?        @unique
+  kontobewegung   Kontobewegung? @relation(fields: [kontobewegungId], references: [id], onDelete: SetNull)
+
+  automatischZugeordnet Boolean @default(false)
+
+  notizen String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([objektId])
 }
 

@@ -19,8 +19,10 @@ export type ExtrahierteBuchung = {
 };
 
 const DATUM_MUSTER = /^(\d{2})\.(\d{2})\.(\d{2,4})\.?\s*/;
-const BETRAG_MUSTER =
-  /([+-])?\s*(\d{1,3}(?:[.\s]\d{3})*,\d{2})\s*(EUR)?\s*([+-]|\bS\b|\bH\b)?\s*$/i;
+// Nur "." als Tausendertrennzeichen (deutsche Konvention) - ein Leerzeichen
+// davor würde sonst versehentlich vorangehende Ziffern (z.B. aus einer
+// Rechnungs-/Referenznummer direkt vor dem Betrag) mit in den Betrag ziehen.
+const BETRAG_MUSTER = /([+-])?\s*(\d{1,3}(?:\.\d{3})*,\d{2})\s*(EUR)?\s*([+-]|\bS\b|\bH\b)?\s*$/i;
 const SEITENTRENNER_MUSTER = /^--\s*\d+\s*of\s*\d+\s*--$/i;
 
 /**

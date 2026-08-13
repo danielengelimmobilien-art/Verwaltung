@@ -323,7 +323,7 @@ export async function getZahlungsuebersicht() {
 
 export async function getUnzugeordneteKontobewegungen() {
   return prisma.kontobewegung.findMany({
-    where: { mietverhaeltnisId: null, objektId: null },
+    where: { mietverhaeltnisId: null, objektId: null, beleg: { is: null } },
     include: { bankkonto: true },
     orderBy: { datum: "desc" },
     take: 60,
@@ -410,4 +410,32 @@ export async function getTextvorlagenGruppiert() {
       vorlagen: vorlagen.filter((v) => v.kategorie === kategorie),
     }))
     .filter((gruppe) => gruppe.vorlagen.length > 0);
+}
+
+// ---------- Belege ----------
+
+export async function getBelege() {
+  return prisma.beleg.findMany({
+    include: {
+      objekt: { select: { id: true, name: true } },
+      kontobewegung: true,
+    },
+    orderBy: [{ status: "asc" }, { rechnungsdatum: "desc" }],
+  });
+}
+
+export async function getUnverknuepfteKontobewegungen() {
+  const bewegungen = await prisma.kontobewegung.findMany({
+    where: { beleg: { is: null }, betrag: { lt: 0 } },
+    orderBy: { datum: "desc" },
+    take: 100,
+  });
+
+  return bewegungen.map((b) => ({
+    id: b.id,
+    label: `${new Intl.DateTimeFormat("de-DE").format(b.datum)} · ${new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
+    }).format(b.betrag)} · ${b.verwendungszweck ?? b.absender ?? "ohne Verwendungszweck"}`,
+  }));
 }

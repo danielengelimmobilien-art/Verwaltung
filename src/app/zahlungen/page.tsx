@@ -5,6 +5,8 @@ import {
   getAktiveMietverhaeltnisListe,
   getObjektListe,
   getBetriebskostenZahlungen,
+  getBelege,
+  getUnverknuepfteKontobewegungen,
 } from "@/lib/queries";
 import { bankkontoTrennen } from "@/lib/bank-actions";
 import { istGoCardlessKonfiguriert } from "@/lib/gocardless";
@@ -16,18 +18,31 @@ import { NewBankkontoButton } from "@/components/forms/bankkonto-form";
 import { SyncButton } from "@/components/forms/bankkonto-sync-button";
 import { PdfImportButton } from "@/components/forms/pdf-import-form";
 import { ZuordnenForm } from "@/components/forms/zuordnen-form";
+import { NewBelegButton } from "@/components/forms/beleg-form";
+import { BelegTable } from "@/components/beleg-table";
 
 export default async function ZahlungenPage() {
   const konfiguriert = istGoCardlessKonfiguriert();
-  const [bankkonten, uebersicht, unzugeordnete, mietverhaeltnisListe, objekte, betriebskosten] =
-    await Promise.all([
-      getBankkonten(),
-      getZahlungsuebersicht(),
-      getUnzugeordneteKontobewegungen(),
-      getAktiveMietverhaeltnisListe(),
-      getObjektListe(),
-      getBetriebskostenZahlungen(),
-    ]);
+  const [
+    bankkonten,
+    uebersicht,
+    unzugeordnete,
+    mietverhaeltnisListe,
+    objekte,
+    betriebskosten,
+    belege,
+    unverknuepfteKontobewegungen,
+  ] = await Promise.all([
+    getBankkonten(),
+    getZahlungsuebersicht(),
+    getUnzugeordneteKontobewegungen(),
+    getAktiveMietverhaeltnisListe(),
+    getObjektListe(),
+    getBetriebskostenZahlungen(),
+    getBelege(),
+    getUnverknuepfteKontobewegungen(),
+  ]);
+  const offeneBelege = belege.filter((b) => b.status === "offen").length;
 
   return (
     <div className="flex flex-col gap-8">
@@ -148,6 +163,24 @@ export default async function ZahlungenPage() {
             </table>
           </div>
         )}
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-semibold text-lg">Belege &amp; Rechnungen</h2>
+            <p className="text-xs text-[var(--muted)] mt-0.5">
+              Rechnungen als PDF hochladen – Betrag/Datum werden vorgeschlagen und automatisch
+              mit den Kontobewegungen abgeglichen{offeneBelege > 0 && ` · ${offeneBelege} offen`}
+            </p>
+          </div>
+          <NewBelegButton objekte={objekte} />
+        </div>
+        <BelegTable
+          belege={belege}
+          objekte={objekte}
+          unverknuepfteKontobewegungen={unverknuepfteKontobewegungen}
+        />
       </div>
 
       <div className="flex flex-col gap-4">

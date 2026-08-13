@@ -115,6 +115,30 @@ Speichern. Buchungen ohne erkennbares Vorzeichen werden zunächst als
 eingehend (positiv) angenommen und lassen sich vor dem Import direkt in der
 Tabelle korrigieren.
 
+## Belege & Rechnungen mit Kontoabgleich
+
+Auf **Zahlungen → Beleg hochladen** lässt sich eine eingegangene Rechnung
+(z.B. Handwerkerrechnung) als PDF hochladen. Aussteller, Rechnungsnummer,
+Rechnungsdatum und Betrag werden automatisch vorgeschlagen und lassen sich
+vor dem Speichern in einem Formular kontrollieren und korrigieren – zusammen
+mit Objekt-Zuordnung und Betriebskosten-Kategorie.
+
+Nach dem Speichern wird automatisch nach einer passenden, noch nicht
+verknüpften Kontobewegung gesucht (Betrag ±2 €, Datum im Fenster von 10 Tagen
+vor bis 60 Tagen nach dem Rechnungsdatum, bei Mehrdeutigkeit zusätzlich
+Namensabgleich). Bei eindeutigem Treffer wird der Beleg automatisch mit der
+Buchung verknüpft und als "Bezahlt" markiert. Ist kein automatischer Treffer
+möglich, lässt sich die passende Buchung manuell zuordnen oder der Beleg
+ohne Buchung (z.B. bei Barzahlung) als bezahlt markieren. Jede Kontobewegung
+kann dabei nur mit **einem** Beleg verknüpft werden – das verhindert
+Doppelbuchungen bei der Betriebskostenabrechnung.
+
+**Wichtig:** Die hochgeladene PDF-Datei wird nur zur Analyse verwendet und
+nicht gespeichert – nach dem Auslesen der Kerndaten ist sie nicht mehr
+Bestandteil der App. Die Dokumentenablage selbst (Ordnerstruktur, Archiv)
+bleibt bewusst außerhalb der App und erfolgt weiterhin extern (z.B. über
+Google Drive mit Synchronisierung auf die eigene Festplatte).
+
 ## Sanierungs-/Modernisierungsunterlagen aus lokalen Ordnern
 
 Diese App-Version läuft in einer Cloud-Sitzung ohne Zugriff auf deinen
