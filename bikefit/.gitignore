@@ -3,7 +3,12 @@
 __pycache__/
 *.pyc
 output/
+input/
 *.mp4
 *.mov
 *.avi
+*.npz
+*.jpg
+*.jpeg
+measure_result.json
 !.gitkeep
